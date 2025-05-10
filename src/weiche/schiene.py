@@ -88,8 +88,8 @@ def schiene_to_dict(location: Location, index: int) -> SchieneStation:
 
 
 class Schiene:
-    def __init__(self):
-        self.api = SynchronousApi()
+    def __init__(self, proxy: str | None = None) -> None:
+        self.api = SynchronousApi(proxy=proxy)
 
     def stations(self, station: str, limit: int = 10) -> list[SchieneStation]:
         """Find stations for given queries.

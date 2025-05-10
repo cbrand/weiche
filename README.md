@@ -53,12 +53,22 @@ api.search_connections(
 )
 ```
 
+You can also add an HTTP proxy to connect via as Bahn tends to block server ip addresses.
+
+```python
+from weiche import SynchronousApi
+
+api = SynchronousApi(proxy="192.168.0.1:8888")
+```
+
 <details>
 <summary>Response from Synchronous API</summary>
 
-The return format is an object which can also be found in the [objects.py](./src/weiche/objects.py) file.
+The return format is an object which can also be found in the
+[objects.py](./src/weiche/objects.py) file.
 
-Look for the [`Connection`](./src/weiche/objects.py#L175) class and see the API definition there.
+Look for the [`Connection`](./src/weiche/objects.py#L175) class
+and see the API definition there.
 
 </details>
 
@@ -87,12 +97,22 @@ async def search():
 asyncio.get_event_loop().run_until_complete(search())
 ```
 
+You can also add an HTTP proxy to connect via as Bahn tends to block server ip addresses.
+
+```python
+from weiche import AsynchronousApi
+
+api = AsynchronousApi(proxy="192.168.0.1:8888")
+```
+
 <details>
 <summary>Response from Asynchronous API</summary>
 
-The return format is an object which can also be found in the [objects.py](./src/weiche/objects.py) file.
+The return format is an object which can also be found in the
+[objects.py](./src/weiche/objects.py) file.
 
-Look for the [`Connection`](./src/weiche/objects.py#L175) class and see the API definition there.
+Look for the [`Connection`](./src/weiche/objects.py#L175)
+class and see the API definition there.
 
 </details>
 
@@ -102,6 +122,14 @@ Look for the [`Connection`](./src/weiche/objects.py#L175) class and see the API 
 from weiche import Schiene
 
 Schiene().connections('Mannheim HbF', 'Stuttgart HbF')
+```
+
+You can also add an HTTP proxy to connect via as Bahn tends to block server ip addresses.
+
+```python
+from weiche import Schiene
+
+api = Schiene(proxy="192.168.0.1:8888")
 ```
 
 <details>
