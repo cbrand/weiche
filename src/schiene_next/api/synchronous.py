@@ -44,10 +44,6 @@ class SynchronousApi(BaseApi):
         )
 
     def search_connections_ext(self, request: ConnectionRequest, limit: int = 10) -> list[Connection]:
-        # Last call the website does before calling the connections. Doing this too
-        # to avoid 422 errors thanks to detection that we are "faking" the website.
-        self.get_travel_associations()
-
         responses: list[Connection] = []
         while len(responses) < limit:
             request_params = self.get_connections_ext_params(request)
