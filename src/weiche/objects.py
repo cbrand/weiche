@@ -5,7 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict, Field
 
-from schiene_next.formatter import timedelta_to_hours_and_seconds_string
+from weiche.formatter import timedelta_to_hours_and_seconds_string
 
 CANCELLED_MESSAGE_KEY = "text.realtime.stop.cancelled"
 
@@ -44,6 +44,7 @@ class Priority(Enum):
     LOW = "NIEDRIG"
     MEDIUM = "MITTEL"
     HIGH = "HOCH"
+    VERY_HIGH = "SEHR HOCH"
 
 
 class ResultSummary(BaseModel):
@@ -57,7 +58,7 @@ class Price(BaseModel):
 
 class OfferPriceVat(BaseModel):
     vat: float = Field(alias="satz")
-    literal: str = Field(alias="literal")
+    literal: str | None = Field(None, alias="literal")
     amount: Price = Field(alias="betrag")
     with_vat: Price = Field(alias="brutto")
     without_vat: Price = Field(alias="netto")
@@ -97,13 +98,13 @@ class ConnectionSegmentStop(BaseModel):
     departure_time: datetime | None = Field(None, alias="abfahrtsZeitpunkt")
     ez_departure_time: datetime | None = Field(None, alias="ezAbfahrtsZeitpunkt")
     utilizations: list[TrainUtilization] = Field(alias="auslastungsmeldungen")
-    track: str = Field(alias="gleis")
-    stop_type: str = Field(alias="haltTyp")
+    track: str | None = Field(None, alias="gleis")
+    stop_type: str | None = Field(None, alias="haltTyp")
     name: str = Field(alias="name")
     notes: list[ConnectionSegmentNote] = Field(alias="risNotizen", default_factory=list)
     messages: list[ConnectionSegmentMessage] = Field(alias="himMeldungen", default_factory=list)
     prioritized_messages: list[ConnectionSegmentPrioritizedMessage] = Field(alias="priorisierteMeldungen")
-    train_stop_info_id: str = Field(alias="bahnhofsInfoId")
+    train_stop_info_id: str | None = Field(None, alias="bahnhofsInfoId")
     ext_id: str = Field(alias="extId")
     route_idx: int = Field(alias="routeIdx")
 
@@ -112,26 +113,26 @@ class MeansOfTransportAttribute(BaseModel):
     category: str = Field(alias="kategorie")
     key: str = Field(alias="key")
     value: str = Field(alias="value")
-    partial_travel_information: str = Field(None, alias="teilstreckenHinweis", validate_default=None)
+    partial_travel_information: str | None = Field(None, alias="teilstreckenHinweis")
 
 
 class MeansOfTransport(BaseModel):
-    product_type: str = Field(alias="produktGattung")
-    category: str = Field(alias="kategorie")
+    product_type: str | None = Field(None, alias="produktGattung")
+    category: str | None = Field(None, alias="kategorie")
     name: str = Field(alias="name")
-    number: str = Field(alias="nummer")
-    direction: str = Field(alias="richtung")
+    number: str | None = Field(None, alias="nummer")
+    direction: str | None = Field(None, alias="richtung")
     type: str = Field(alias="typ")
-    short_text: str = Field(alias="kurzText")
-    medium_text: str = Field(alias="mittelText")
-    long_text: str = Field(alias="langText")
-    attributes: list[MeansOfTransportAttribute] = Field(alias="zugattribute")
+    short_text: str | None = Field(None, alias="kurzText")
+    medium_text: str | None = Field(None, alias="mittelText")
+    long_text: str | None = Field(None, alias="langText")
+    attributes: list[MeansOfTransportAttribute] = Field(alias="zugattribute", default_factory=list)
 
 
 class ServiceDays(BaseModel):
     last_date_in_period: date = Field(alias="lastDateInPeriod")
     regular: str = Field(alias="regular")
-    irregular: str = Field(alias="irregular")
+    irregular: str | None = Field(None, alias="irregular")
     planning_period_begin: date = Field(alias="planningPeriodBegin")
     planning_period_end: date = Field(alias="planningPeriodEnd")
     weekdays: list[str] = Field(alias="weekdays")
@@ -141,8 +142,8 @@ class ConnectionSegment(BaseModel):
     notes: list[ConnectionSegmentNote] = Field(alias="risNotizen")
     messages: list[ConnectionSegmentMessage] = Field(alias="himMeldungen")
     prioritized_messages: list[ConnectionSegmentPrioritizedMessage] = Field(alias="priorisierteMeldungen")
-    external_train_station_origin_id: str = Field(alias="externeBahnhofsinfoIdOrigin")
-    external_train_station_destination_id: str = Field(alias="externeBahnhofsinfoIdDestination")
+    external_train_station_origin_id: str | None = Field(None, alias="externeBahnhofsinfoIdOrigin")
+    external_train_station_destination_id: str | None = Field(None, alias="externeBahnhofsinfoIdDestination")
     departure_time: datetime | None = Field(None, alias="abfahrtsZeitpunkt")
     departure_location: str = Field(alias="abfahrtsOrt")
     departure_location_ext_id: str = Field(alias="abfahrtsOrtExtId")
@@ -189,12 +190,14 @@ class Connection(BaseModel):
     is_age_specification_required: bool = Field(alias="isAlterseingabeErforderlich")
     service_days: list[ServiceDays] = Field(alias="serviceDays", default_factory=list)
     event_summary: ResultSummary | None = Field(None, alias="ereignisZusammenfassung")
-    price: OfferPrice = Field(alias="angebotsPreis")
-    offer_price_class: str = Field(alias="angebotsPreisKlasse")
+    price: OfferPrice | None = Field(None, alias="angebotsPreis")
+    offer_price_class: str | None = Field(None, alias="angebotsPreisKlasse")
     has_partial_price: bool = Field(alias="hasTeilpreis")
     offers: list[Any] = Field(alias="reiseAngebote")
-    offer_informations: list[str] = Field(alias="angebotsInformationen")
-    offer_informations_objects: list[OfferInformation] = Field(alias="angebotsInformationenAsObject")
+    offer_informations: list[str] = Field(alias="angebotsInformationen", default_factory=list)
+    offer_informations_objects: list[OfferInformation] = Field(
+        alias="angebotsInformationenAsObject", default_factory=list
+    )
     back_and_forth_combined_price: bool = Field(alias="hinRueckPauschalpreis")
     is_reservation_outside_of_pre_booking_period: bool = Field(alias="isReservierungAusserhalbVorverkaufszeitraum")
     complete_offer_list: list[Any] = Field(alias="gesamtAngebotsbeziehungList")

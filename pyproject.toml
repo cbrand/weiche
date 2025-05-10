@@ -3,9 +3,9 @@ requires = ['setuptools', 'setuptools_scm']
 build-backend = 'setuptools.build_meta'
 
 [project]
-name = 'schiene-next'
-description = '##### ToDo: Rewrite me #####'
-readme = 'README.rst'
+name = 'weiche'
+description = 'A wrapper around the DB Website API for querying train connections.'
+readme = 'README.md'
 license = {file = 'LICENSE'}
 authors = [{name='Christoph Brand', email='christoph+pypi@brand.rest'}]
 dependencies = [
@@ -27,16 +27,16 @@ requires-python = '>=3.10'
 dynamic = ['version']
 
 [project.scripts]
-#schiene-next = 'schiene_next.commands:main'
+#weiche = 'weiche.commands:main'
 
 [tools.setuptools]
 package-dir = {'' = 'src'}
 
 [tools.setuptools.dynamic]
-version = {attr = 'schiene_next.version.version'}
+version = {attr = 'weiche.version.version'}
 
 [tool.setuptools_scm]
-write_to = 'src/schiene_next/version.py'
+write_to = 'src/weiche/version.py'
 version_scheme = 'python-simplified-semver'
 local_scheme = 'no-local-version'
 
@@ -51,9 +51,9 @@ test=[
     'requests',
     'aiohttp'
 ]
-doc = ['sphinx']
 sync = ['requests']
 async = ['aiohttp']
+schiene = ['requests']
 
 [tool.black]
 line-length = 120

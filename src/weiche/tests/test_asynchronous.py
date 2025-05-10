@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from schiene_next import AsynchronousApi
+from weiche import AsynchronousApi
 
 
 @pytest.mark.asyncio

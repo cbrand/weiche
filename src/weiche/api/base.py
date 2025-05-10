@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urljoin
 
-from schiene_next.const import DEFAULT_BASE_URL
-from schiene_next.objects import ConnectionRequest
+from weiche.const import DEFAULT_BASE_URL
+from weiche.objects import ConnectionRequest
 
 
 class BaseApi:

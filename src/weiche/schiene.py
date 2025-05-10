@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import TypedDict
 
-from schiene_next.api.synchronous import SynchronousApi
-from schiene_next.objects import Connection, Location
+from weiche.api.synchronous import SynchronousApi
+from weiche.objects import Connection, Location
 
 
 class SchieneStation(TypedDict):
@@ -29,7 +29,7 @@ class SchieneConnection(TypedDict):
     departure: str
     delay: SchieneConnectionDelay | None
     details: str
-    price: float
+    price: float | None
     products: list[str]
     time: str
     transfers: int
@@ -43,13 +43,22 @@ def datetime_to_time_string(dt: datetime | None) -> str:
 
 
 def connection_to_dict(connection: Connection) -> SchieneConnection:
+    if connection.price is None:
+        amount = None
+    else:
+        amount = connection.price.amount
+
     payload = SchieneConnection(
         arrival=datetime_to_time_string(connection.planned_arrival_time),
         canceled=connection.cancelled,
         departure=datetime_to_time_string(connection.planned_departure_time),
         details="",
-        price=connection.price.amount,
-        products=[segment.means_of_transport.product_type for segment in connection.segments],
+        price=amount,
+        products=[
+            segment.means_of_transport.product_type
+            for segment in connection.segments
+            if segment.means_of_transport.product_type
+        ],
         time=connection.ez_connection_time_string or connection.connection_time_string,
         transfers=connection.changes,
         ontime=connection.on_time,
@@ -67,7 +76,7 @@ def schiene_to_dict(location: Location, index: int) -> SchieneStation:
     return SchieneStation(
         extId=location.ext_id,
         id=location.id,
-        prodClass=",".join(location.products),
+        prodClass=",".join(product for product in location.products if product),
         state="id",
         type=location.type,
         typeStr=location.type,

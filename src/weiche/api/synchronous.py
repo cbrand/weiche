@@ -3,10 +3,10 @@ from http import HTTPStatus
 
 import requests
 
-from schiene_next.api.base import BaseApi
-from schiene_next.api.parser import parse_associations, parse_connection_response, parse_locations
-from schiene_next.const import DEFAULT_BASE_URL
-from schiene_next.objects import Association, Connection, ConnectionRequest, Location
+from weiche.api.base import BaseApi
+from weiche.api.parser import parse_associations, parse_connection_response, parse_locations
+from weiche.const import DEFAULT_BASE_URL
+from weiche.objects import Association, Connection, ConnectionRequest, Location
 
 
 class SynchronousApi(BaseApi):

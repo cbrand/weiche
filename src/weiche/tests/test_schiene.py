@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from schiene_next import Schiene
+from weiche import Schiene
 
 
 @pytest.mark.parametrize("only_direct", [True, False])

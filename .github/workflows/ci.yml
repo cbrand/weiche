@@ -18,7 +18,7 @@ jobs:
           python -m pip install --use-pep517 pytest-cov pytest-random pytest-remove-stale-bytecode flake8 pycodestyle pydocstyle Sphinx sphinx_rtd_theme
           python -m pip install .
       - name: Run unittest
-        run: pytest -v  --random --cov=src/schiene_next --cov-report=term
+        run: pytest -v  --random --cov=src/weiche --cov-report=term
       - name: flake8
         run: flake8 src
       - name: pycodestyle

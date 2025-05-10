@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import RootModel
 
-from schiene_next.objects import Association, ConnectionResponse, Location
+from weiche.objects import Association, ConnectionResponse, Location
 
 
 def parse_locations(payload: list[Any]) -> list[Location]:
