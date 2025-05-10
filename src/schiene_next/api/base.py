@@ -32,7 +32,7 @@ class BaseApi:
         at = at or datetime.now()
         return ConnectionRequest(
             time=at,
-            departure=from_location,
+            origin=from_location,
             destination=to_location,
             paging_reference=paging_reference,
         )

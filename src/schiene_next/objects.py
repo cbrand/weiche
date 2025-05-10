@@ -1,9 +1,13 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict, Field
+
+from schiene_next.formatter import timedelta_to_hours_and_seconds_string
+
+CANCELLED_MESSAGE_KEY = "text.realtime.stop.cancelled"
 
 
 class BaseModel(_BaseModel):
@@ -155,6 +159,10 @@ class ConnectionSegment(BaseModel):
     idx: int = Field(alias="idx")
     means_of_transport: MeansOfTransport = Field(alias="verkehrsmittel")
 
+    @property
+    def cancelled(self) -> bool:
+        return any(note.key == CANCELLED_MESSAGE_KEY for note in self.notes)
+
 
 class OfferInformation(BaseModel):
     code: str = Field(alias="code")
@@ -190,6 +198,66 @@ class Connection(BaseModel):
     back_and_forth_combined_price: bool = Field(alias="hinRueckPauschalpreis")
     is_reservation_outside_of_pre_booking_period: bool = Field(alias="isReservierungAusserhalbVorverkaufszeitraum")
     complete_offer_list: list[Any] = Field(alias="gesamtAngebotsbeziehungList")
+
+    @property
+    def ez_connection_time(self) -> timedelta | None:
+        if self.ez_connection_time_in_seconds is not None:
+            return timedelta(seconds=self.ez_connection_time_in_seconds)
+        return None
+
+    @property
+    def ez_connection_time_string(self) -> str | None:
+        if self.ez_connection_time is not None:
+            return timedelta_to_hours_and_seconds_string(self.ez_connection_time)
+        return None
+
+    @property
+    def connection_time(self) -> timedelta:
+        return timedelta(seconds=self.connection_time_in_seconds)
+
+    @property
+    def connection_time_string(self) -> str:
+        return timedelta_to_hours_and_seconds_string(self.connection_time)
+
+    @property
+    def planned_departure_time(self) -> datetime | None:
+        return self.segments[0].departure_time
+
+    @property
+    def planned_arrival_time(self) -> datetime | None:
+        return self.segments[-1].arrival_time
+
+    @property
+    def actual_departure_time(self) -> datetime | None:
+        return self.segments[0].ez_departure_time
+
+    @property
+    def actual_arrival_time(self) -> datetime | None:
+        return self.segments[-1].ez_arrival_time
+
+    @property
+    def delay_departure(self) -> timedelta:
+        if self.planned_departure_time and self.actual_departure_time:
+            return self.actual_departure_time - self.planned_departure_time
+        return timedelta(0)
+
+    @property
+    def delay_arrival(self) -> timedelta:
+        if self.planned_arrival_time and self.actual_arrival_time:
+            return self.actual_arrival_time - self.planned_arrival_time
+        return timedelta(0)
+
+    @property
+    def cancelled(self) -> bool:
+        return any(note.key == CANCELLED_MESSAGE_KEY for note in self.notes)
+
+    @property
+    def direct(self) -> bool:
+        return self.changes == 0
+
+    @property
+    def on_time(self) -> bool:
+        return self.delay_arrival == timedelta(0)
 
 
 class ConnectionResponse(BaseModel):
@@ -281,7 +349,7 @@ class Traveller(BaseModel):
 
 
 class ConnectionRequest(BaseModel):
-    departure: str = Field(alias="abfahrtsHalt")
+    origin: str = Field(alias="abfahrtsHalt")
     destination: str = Field(alias="ankunftsHalt")
     time: datetime = Field(alias="anfrageZeitpunkt", default_factory=datetime.now)
     search_type: RequestType = Field(RequestType.DEPARTURE, alias="ankunftSuche")

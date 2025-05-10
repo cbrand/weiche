@@ -10,7 +10,6 @@ license = {file = 'LICENSE'}
 authors = [{name='Christoph Brand', email='christoph+pypi@brand.rest'}]
 dependencies = [
     "pydantic>=2,<3",
-    "requests",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -47,9 +46,14 @@ local_scheme = 'no-local-version'
 [project.optional-dependencies]
 test=[
     'pytest',
-    'tox'
+    'pytest-asyncio',
+    'tox',
+    'requests',
+    'aiohttp'
 ]
 doc = ['sphinx']
+sync = ['requests']
+async = ['aiohttp']
 
 [tool.black]
 line-length = 120

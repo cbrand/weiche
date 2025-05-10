@@ -1,6 +1,5 @@
 # flake8: noqa: F401
 
-from schiene_next.api.synchronous import SynchronousApi
 from schiene_next.objects import (
     BahnCard25Reduction1stClass,
     BahnCard25Reduction2ndClass,
@@ -30,3 +29,20 @@ from schiene_next.objects import (
     TravellerType,
     VorteilsCardOesterreichReduction,
 )
+
+try:
+    from schiene_next.api.synchronous import SynchronousApi
+except ImportError:
+    pass
+
+
+try:
+    from schiene_next.api.asynchronous import AsynchronousApi
+except ImportError:
+    pass
+
+
+try:
+    from schiene_next.schiene import Schiene
+except ImportError:
+    pass

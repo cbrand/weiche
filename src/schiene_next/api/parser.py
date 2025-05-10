@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import RootModel, ValidationError
+from pydantic import RootModel
 
 from schiene_next.objects import Association, ConnectionResponse, Location
 
@@ -10,10 +10,7 @@ def parse_locations(payload: list[Any]) -> list[Location]:
 
 
 def parse_connection_response(payload: dict[str, Any]) -> ConnectionResponse:
-    try:
-        return ConnectionResponse.model_validate(payload, by_alias=True)
-    except ValidationError as e:
-        raise e
+    return ConnectionResponse.model_validate(payload, by_alias=True)
 
 
 def parse_associations(payload: list[Any]) -> list[Association]:
