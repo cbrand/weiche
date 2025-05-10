@@ -41,7 +41,7 @@ version_scheme = 'python-simplified-semver'
 local_scheme = 'no-local-version'
 
 [project.urls]
-'Homepage' = 'None'
+'Homepage' = 'https://github.com/cbrand/weiche'
 
 [project.optional-dependencies]
 test=[
