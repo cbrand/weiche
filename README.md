@@ -58,7 +58,7 @@ api.search_connections(
 
 The return format is an object which can also be found in the [objects.py](./src/weiche/objects.py) file.
 
-Look for the `Connection` class and see the API definition there.
+Look for the [`Connection`](./src/weiche/objects.py#L175) class and see the API definition there.
 
 </details>
 
@@ -92,7 +92,7 @@ asyncio.get_event_loop().run_until_complete(search())
 
 The return format is an object which can also be found in the [objects.py](./src/weiche/objects.py) file.
 
-Look for the `Connection` class and see the API definition there.
+Look for the [`Connection`](./src/weiche/objects.py#L175) class and see the API definition there.
 
 </details>
 
