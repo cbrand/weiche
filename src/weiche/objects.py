@@ -71,8 +71,7 @@ class OfferPrice(BaseModel):
 
 
 class ConnectionSegmentPrioritizedMessage(BaseModel):
-
-    text: str = Field(alias="text")
+    text: str | None = Field(None, alias="text")
     priority: Priority = Field(alias="prioritaet")
 
 
