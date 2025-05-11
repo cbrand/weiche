@@ -27,7 +27,6 @@ class SchieneConnection(TypedDict):
     arrival: str
     canceled: bool
     departure: str
-    delay: SchieneConnectionDelay | None
     details: str
     price: float | None
     products: list[str]
@@ -36,13 +35,17 @@ class SchieneConnection(TypedDict):
     ontime: bool
 
 
+class DelayedSchieneConnection(SchieneConnection):
+    delay: SchieneConnectionDelay
+
+
 def datetime_to_time_string(dt: datetime | None) -> str:
     if dt is None:
         return ""
     return dt.strftime("%H:%M")
 
 
-def connection_to_dict(connection: Connection) -> SchieneConnection:
+def connection_to_dict(connection: Connection) -> SchieneConnection | DelayedSchieneConnection:
     if connection.price is None:
         amount = None
     else:
@@ -62,7 +65,6 @@ def connection_to_dict(connection: Connection) -> SchieneConnection:
         time=connection.ez_connection_time_string or connection.connection_time_string,
         transfers=connection.changes,
         ontime=connection.on_time,
-        delay=None,
     )
     if not connection.on_time:
         payload["delay"] = SchieneConnectionDelay(
@@ -106,7 +108,7 @@ class Schiene:
 
     def connections(
         self, origin: str, destination: str, dt: datetime = datetime.now(), only_direct: bool = False
-    ) -> list[SchieneConnection]:
+    ) -> list[SchieneConnection | DelayedSchieneConnection]:
         """Find connections between two stations.
 
         Args:
