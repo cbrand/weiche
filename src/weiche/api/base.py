@@ -1,15 +1,38 @@
 import json
+import ssl
 from datetime import datetime
 from typing import Any
 from urllib.parse import urljoin
 
-from weiche.const import DEFAULT_BASE_URL
+from weiche.const import DEFAULT_BASE_URL, TLS_ECDH_CURVE, USER_AGENT
 from weiche.objects import ConnectionRequest
+
+
+def create_ssl_context() -> ssl.SSLContext:
+    """
+    The DB API is protected by Akamai which blocks requests based on the TLS
+    fingerprint. The default OpenSSL key exchange group list used by Python
+    is rejected, so the offered groups are restricted.
+    """
+    context = ssl.create_default_context()
+    try:
+        context.set_ecdh_curve(TLS_ECDH_CURVE)
+    except (ValueError, ssl.SSLError):
+        pass
+    return context
 
 
 class BaseApi:
     def __init__(self, base_url: str = DEFAULT_BASE_URL):
         self.base_url = base_url
+        self.ssl_context = create_ssl_context()
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return {
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json",
+        }
 
     @property
     def locations_url(self):

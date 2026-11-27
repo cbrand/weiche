@@ -1,8 +1,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
+import ssl
 import time
 import requests
+from requests.adapters import HTTPAdapter
 
 from weiche.api.base import BaseApi
 from weiche.api.parser import parse_associations, parse_connection_response, parse_locations
@@ -10,10 +12,26 @@ from weiche.const import DEFAULT_BASE_URL
 from weiche.objects import Association, Connection, ConnectionRequest, Location
 
 
+class SSLContextAdapter(HTTPAdapter):
+    def __init__(self, ssl_context: ssl.SSLContext, **kwargs) -> None:
+        self.ssl_context = ssl_context
+        super().__init__(**kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs["ssl_context"] = self.ssl_context
+        return super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        kwargs["ssl_context"] = self.ssl_context
+        return super().proxy_manager_for(*args, **kwargs)
+
+
 class SynchronousApi(BaseApi):
     def __init__(self, base_url: str = DEFAULT_BASE_URL, proxy: str | None = None) -> None:
         super().__init__(base_url)
         self.session = requests.Session()
+        self.session.headers.update(self.headers)
+        self.session.mount("https://", SSLContextAdapter(self.ssl_context))
         if proxy:
             self.session.proxies = {"http": proxy, "https": proxy}
 

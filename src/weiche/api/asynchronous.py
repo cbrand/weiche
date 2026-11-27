@@ -14,7 +14,11 @@ class AsynchronousApi(BaseApi):
     def __init__(self, base_url: str = DEFAULT_BASE_URL, proxy: str | None = None) -> None:
         super().__init__(base_url)
         proxy = proxy or None
-        self.session = aiohttp.ClientSession(proxy=proxy)
+        self.session = aiohttp.ClientSession(
+            proxy=proxy,
+            headers=self.headers,
+            connector=aiohttp.TCPConnector(ssl=self.ssl_context),
+        )
 
     async def get_travel_associations(self) -> list[Association]:
         async with self.session.get(self.travel_associations_url) as response:

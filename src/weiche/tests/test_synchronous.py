@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -36,7 +36,7 @@ def test_connections_api_international(target: str) -> None:
     target_obj = target_locations[0]
 
     connections = api.search_connections(
-        at=datetime(2025, 5, 10, 18, 0, 0),
+        at=(datetime.now() + timedelta(days=7)).replace(hour=18, minute=0, second=0, microsecond=0),
         from_location=munich.id,
         to_location=target_obj.id,
     )

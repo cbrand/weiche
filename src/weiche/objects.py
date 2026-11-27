@@ -2,12 +2,44 @@ from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import Any, Literal
 
+from pydantic import AliasChoices
 from pydantic import BaseModel as _BaseModel
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from weiche.formatter import timedelta_to_hours_and_seconds_string
 
 CANCELLED_MESSAGE_KEY = "text.realtime.stop.cancelled"
+CANCELLED_MESSAGE_KEYS = frozenset(
+    {
+        CANCELLED_MESSAGE_KEY,
+        "text.realtime.connection.cancelled",
+        "text.realtime.journey.cancelled",
+    }
+)
+
+
+def _flatten_time_objects(data: Any, mapping: dict[str, tuple[str, str]]) -> Any:
+    """
+    The API returns times as nested objects (e.g. ``{"abfahrt": {"sollzeit": ..., "echtzeit": ...}}``)
+    instead of the previously used flat fields (e.g. ``abfahrtsZeitpunkt`` / ``ezAbfahrtsZeitpunkt``).
+    Map the nested structure to the flat fields if they are not present.
+    """
+    if not isinstance(data, dict):
+        return data
+    data = dict(data)
+    for flat_key, (nested_key, time_key) in mapping.items():
+        nested = data.get(nested_key)
+        if flat_key not in data and isinstance(nested, dict) and nested.get(time_key) is not None:
+            data[flat_key] = nested[time_key]
+    return data
+
+
+_TIME_MAPPING = {
+    "abfahrtsZeitpunkt": ("abfahrt", "sollzeit"),
+    "ezAbfahrtsZeitpunkt": ("abfahrt", "echtzeit"),
+    "ankunftsZeitpunkt": ("ankunft", "sollzeit"),
+    "ezAnkunftsZeitpunkt": ("ankunft", "echtzeit"),
+}
 
 
 class BaseModel(_BaseModel):
@@ -49,6 +81,7 @@ class Priority(Enum):
 
 class ResultSummary(BaseModel):
     priority: Priority = Field(alias="prioritaet")
+    summary: str | None = Field(None, alias="zusammenfassung")
 
 
 class Price(BaseModel):
@@ -76,8 +109,10 @@ class ConnectionSegmentPrioritizedMessage(BaseModel):
 
 
 class ConnectionSegmentMessage(ConnectionSegmentPrioritizedMessage):
-    title: str = Field(alias="ueberschrift")
-    modified: datetime = Field(alias="modDateTime")
+    title: str = Field("", alias="ueberschrift")
+    modified: datetime | None = Field(None, alias="modDateTime")
+    route_idx_from: int | None = Field(None, alias="routeIdxFrom")
+    route_idx_to: int | None = Field(None, alias="routeIdxTo")
 
 
 class TrainUtilization(BaseModel):
@@ -96,8 +131,13 @@ class ConnectionSegmentStop(BaseModel):
     id: str
     departure_time: datetime | None = Field(None, alias="abfahrtsZeitpunkt")
     ez_departure_time: datetime | None = Field(None, alias="ezAbfahrtsZeitpunkt")
+    arrival_time: datetime | None = Field(None, alias="ankunftsZeitpunkt")
+    ez_arrival_time: datetime | None = Field(None, alias="ezAnkunftsZeitpunkt")
     utilizations: list[TrainUtilization] = Field(alias="auslastungsmeldungen")
     track: str | None = Field(None, alias="gleis")
+    ez_track: str | None = Field(None, alias="ezGleis")
+    is_cancelled: bool = Field(False, alias="cancelled")
+    is_additional: bool = Field(False, alias="additional")
     stop_type: str | None = Field(None, alias="haltTyp")
     name: str = Field(alias="name")
     notes: list[ConnectionSegmentNote] = Field(alias="risNotizen", default_factory=list)
@@ -106,6 +146,11 @@ class ConnectionSegmentStop(BaseModel):
     train_stop_info_id: str | None = Field(None, alias="bahnhofsInfoId")
     ext_id: str = Field(alias="extId")
     route_idx: int = Field(alias="routeIdx")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _flatten_times(cls, data: Any) -> Any:
+        return _flatten_time_objects(data, _TIME_MAPPING)
 
 
 class MeansOfTransportAttribute(BaseModel):
@@ -158,10 +203,22 @@ class ConnectionSegment(BaseModel):
     stops: list[ConnectionSegmentStop] = Field(alias="halte")
     idx: int = Field(alias="idx")
     means_of_transport: MeansOfTransport = Field(alias="verkehrsmittel")
+    journey_id: str | None = Field(None, alias="journeyId")
+    origin_cancelled: bool = Field(False, alias="originCancelled")
+    destination_cancelled: bool = Field(False, alias="destinationCancelled")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _flatten_times(cls, data: Any) -> Any:
+        return _flatten_time_objects(data, _TIME_MAPPING)
 
     @property
     def cancelled(self) -> bool:
-        return any(note.key == CANCELLED_MESSAGE_KEY for note in self.notes)
+        return (
+            self.origin_cancelled
+            or self.destination_cancelled
+            or any(note.key in CANCELLED_MESSAGE_KEYS for note in self.notes)
+        )
 
 
 class OfferInformation(BaseModel):
@@ -182,7 +239,7 @@ class Connection(BaseModel):
     utilizations: list[TrainUtilization] = Field(default_factory=list, alias="auslastungsmeldungen")
     utilization_texts: list[TrainUtilizationText] = Field(default_factory=list, alias="auslastungstexte")
     notes: list[ConnectionSegmentNote] = Field(alias="risNotizen")
-    messages: list[ConnectionSegmentMessage] = Field(alias="himMeldungen")
+    messages: list[ConnectionSegmentMessage] = Field(alias="himMeldungen", default_factory=list)
     prioritized_messages: list[ConnectionSegmentPrioritizedMessage] = Field(alias="priorisierteMeldungen")
     reservation_messages: list[Any] = Field(alias="reservierungsMeldungen")
     is_bid_solicitation_requested: bool = Field(alias="isAngebotseinholungNachgelagert")
@@ -193,9 +250,15 @@ class Connection(BaseModel):
     offer_price_class: str | None = Field(None, alias="angebotsPreisKlasse")
     has_partial_price: bool = Field(alias="hasTeilpreis")
     offers: list[Any] = Field(alias="reiseAngebote")
-    offer_informations: list[str] = Field(alias="angebotsInformationen", default_factory=list)
+    offer_informations: list[str] = Field(
+        validation_alias=AliasChoices("angebotsInformationen", "meldungen"),
+        serialization_alias="angebotsInformationen",
+        default_factory=list,
+    )
     offer_informations_objects: list[OfferInformation] = Field(
-        alias="angebotsInformationenAsObject", default_factory=list
+        validation_alias=AliasChoices("angebotsInformationenAsObject", "meldungenAsObject"),
+        serialization_alias="angebotsInformationenAsObject",
+        default_factory=list,
     )
     back_and_forth_combined_price: bool = Field(alias="hinRueckPauschalpreis")
     is_reservation_outside_of_pre_booking_period: bool = Field(alias="isReservierungAusserhalbVorverkaufszeitraum")
@@ -251,7 +314,9 @@ class Connection(BaseModel):
 
     @property
     def cancelled(self) -> bool:
-        return any(note.key == CANCELLED_MESSAGE_KEY for note in self.notes)
+        return any(note.key in CANCELLED_MESSAGE_KEYS for note in self.notes) or any(
+            segment.cancelled for segment in self.segments
+        )
 
     @property
     def direct(self) -> bool:
